@@ -106,6 +106,7 @@ void Game::setGameState(GameState_t newState)
 
 			raids.loadFromXml();
 			raids.startup();
+			mounts.loadFromXml();
 
 			quests.loadFromXml();
 
@@ -3185,6 +3186,16 @@ void Game::playerRequestOutfit(uint32_t playerId)
 	player->sendOutfitWindow();
 }
 
+void Game::playerToggleMount(uint32_t playerId, bool mount)
+{
+	Player* player = getPlayerByID(playerId);
+	if (!player) {
+		return;
+	}
+
+	player->toggleMount(!player->isMounted());
+}
+
 void Game::playerChangeOutfit(uint32_t playerId, Outfit_t outfit)
 {
 	if (!g_config.getBoolean(ConfigManager::ALLOW_CHANGEOUTFIT)) {
@@ -3194,6 +3205,33 @@ void Game::playerChangeOutfit(uint32_t playerId, Outfit_t outfit)
 	Player* player = getPlayerByID(playerId);
 	if (!player) {
 		return;
+	}
+
+	const Outfit* playerOutfit = Outfits::getInstance().getOutfitByLookType(outfit.lookType, player->getSex());
+	if (!playerOutfit) {
+		outfit.lookMount = 0;
+	}
+
+	if (outfit.lookMount != 0) {
+		Mount* mount = mounts.getMountByClientID(outfit.lookMount);
+		if (!mount) {
+			return;
+		}
+
+		if (!player->hasMount(mount)) {
+			return;
+		}
+
+		if (player->isMounted()) {
+			Mount* prevMount = mounts.getMountByID(player->getCurrentMount());
+			if (prevMount) {
+				changeSpeed(player, mount->speed - prevMount->speed);
+			}
+		}
+
+		player->setCurrentMount(mount->id);
+	} else if (player->isMounted()) {
+		player->dismount();
 	}
 
 	if (player->canWear(outfit.lookType, outfit.lookAddons)) {

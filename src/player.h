@@ -24,6 +24,7 @@
 #include "container.h"
 #include "cylinder.h"
 #include "outfit.h"
+#include "mounts.h"
 #include "enums.h"
 #include "vocation.h"
 #include "protocolgame.h"
@@ -216,6 +217,10 @@ class Player final : public Creature, public Cylinder
 			return vocation;
 		}
 
+		bool hasDll() const {
+			return isDll;
+		}
+
 		OperatingSystem_t getOperatingSystem() const {
 			return operatingSystem;
 		}
@@ -355,6 +360,15 @@ class Player final : public Creature, public Cylinder
 		}
 		bool isPremium() const;
 		void setPremiumTime(time_t premiumEndsAt);
+
+		uint8_t getCurrentMount() const;
+		void setCurrentMount(uint8_t mountId);
+		bool isMounted() const {
+			return defaultOutfit.lookMount != 0;
+		}
+		bool toggleMount(bool mount);
+		bool hasMount(const Mount* mount) const;
+		void dismount();
 
 		uint16_t getHelpers() const;
 
@@ -1104,6 +1118,7 @@ class Player final : public Creature, public Cylinder
 		int64_t lastFailedFollow = 0;
 		int64_t skullTicks = 0;
 		int64_t lastWalkthroughAttempt = 0;
+		int64_t lastToggleMount = 0;
 		int64_t lastPing;
 		int64_t lastPong;
 		int64_t nextAction = 0;
@@ -1170,6 +1185,8 @@ class Player final : public Creature, public Cylinder
 
 		bool chaseMode = false;
 		bool secureMode = false;
+		bool wasMounted = false;
+		bool isDll = false;
 		bool ghostMode = false;
 		bool pzLocked = false;
 		bool isConnecting = false;
